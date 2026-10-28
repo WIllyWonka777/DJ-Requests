@@ -424,6 +424,23 @@ const stage = (() => {
       vc.fillStyle = "#fff"; vc.font = `700 ${Math.round(R*0.075)}px ui-monospace,Menlo,monospace`; vc.textAlign = "center";
       vc.fillText(DJ_NAME.toUpperCase(), 0, R*0.13);
     }
+    if (isHalloween) {
+      // DJ name printed around the record, just outside the pumpkin (twice, opposite sides)
+      const txt = DJ_NAME.toUpperCase(), rr = R * 0.38, fs = Math.max(11, Math.round(R * 0.085));
+      vc.font = `700 ${fs}px ui-monospace,Menlo,Consolas,monospace`; vc.textAlign = "center"; vc.textBaseline = "middle";
+      vc.fillStyle = "#fff"; vc.shadowColor = PAL.hotHex; vc.shadowBlur = 8 + beat * 10;
+      const widths = [...txt].map(ch => vc.measureText(ch).width + fs * 0.12);
+      const span = widths.reduce((x, y) => x + y, 0) / rr;            // arc length -> angle
+      for (const base of [-Math.PI / 2, Math.PI / 2]) {
+        let a = base - span / 2;
+        [...txt].forEach((ch, i) => {
+          const w = widths[i] / rr; a += w / 2;
+          vc.save(); vc.rotate(a); vc.translate(0, -rr); vc.fillText(ch, 0, 0); vc.restore();
+          a += w / 2;
+        });
+      }
+      vc.shadowBlur = 0; vc.textBaseline = "alphabetic";
+    }
     vc.fillStyle = "#020205"; vc.beginPath(); vc.arc(0,0,R*0.035,0,Math.PI*2); vc.fill();
     vc.restore();
 
