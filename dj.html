@@ -725,7 +725,7 @@ function start(){
   document.addEventListener("keydown", e => { if (e.key === "Escape") { $("fx").classList.remove("run"); } });
 
   // ----- Peripheral alerts -----
-  // Edge glow flashes for 4s on its own. NEW chip + NEW tags stay until the DJ acknowledges (tap/click/key, or Played/Skip).
+  // Everything (edge glow, NEW chip, NEW tags, tab blink) clears by itself 4s after the latest request. No click needed.
   function paintAlerts(){
     const live = [...unread].filter(id => rows.some(r => r.id === id && r.status === "new"));
     unread = new Set(live);
@@ -739,7 +739,8 @@ function start(){
     const e = $("edge"); e.classList.remove("on"); void e.offsetWidth; e.classList.add("on");
     clearTimeout(edgeTimer); edgeTimer = setTimeout(() => e.classList.remove("on"), 4000);
   }
-  function ack(){ if (!unread.size) return; unread.clear(); render(); }
+  let ackTimer;
+  function ack(){ clearTimeout(ackTimer); if (!unread.size) return; unread.clear(); render(); }
   $("newChip").onclick = e => { e.stopPropagation(); ack(); };
   $("app").addEventListener("pointerdown", () => { if (unread.size) setTimeout(ack, 150); });
   document.addEventListener("keydown", e => { if (e.key !== "u" && e.key !== "U") setTimeout(ack, 150); });
@@ -787,7 +788,7 @@ function start(){
     const arrivals = rows.filter(r => fresh.has(r.id) && r.status === "new");
     arrivals.forEach(r => stage.log(`> INCOMING REQUEST :: "${r.song}"${r.artist ? " — " + r.artist : ""}${r.name ? "  [from " + r.name + "]" : ""}`, "hot"));
     arrivals.forEach(r => unread.add(r.id));
-    if (arrivals.length) { flashEdge(); notify(arrivals); }
+    if (arrivals.length) { flashEdge(); notify(arrivals); clearTimeout(ackTimer); ackTimer = setTimeout(ack, 4000); }
     announce(arrivals);
     render();
   });
