@@ -1,0 +1,36 @@
+name: Sync song catalog
+
+# Pulls DJ Phil.B's library from phillipbr/flamingo-dj and rebuilds catalog.json
+on:
+  schedule:
+    - cron: "17 */3 * * *"   # every 3 hours
+  workflow_dispatch: {}       # "Run workflow" button for an instant refresh
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-catalog
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build catalog.json
+        run: python3 scripts/build_catalog.py
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- catalog.json; then
+            echo "Catalog unchanged"
+            exit 0
+          fi
+          git config user.name "catalog-sync"
+          git config user.email "actions@users.noreply.github.com"
+          git add catalog.json
+          git commit -m "Sync song catalog from flamingo-dj"
+          git push
