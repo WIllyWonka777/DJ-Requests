@@ -6,58 +6,129 @@
 <meta name="robots" content="noindex">
 <title>DJ Screen</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#07070c;--card:#13131f;--line:#25253a;--text:#fff;--muted:#8d8daa;--accent:#ff3d7f;--accent2:#7c5cff;--ok:#2fd27a}
+  :root{--bg:#050508;--card:#12121c;--card2:#1a1a28;--line:#262638;--text:#fff;--muted:#8b8ba8;--accent:#ff3d7f;--accent2:#7c5cff;--ok:#22d07a;--warn:#ffb020}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif}
-  #gate{min-height:100vh;display:grid;place-items:center;padding:16px}
-  #gate form{display:grid;gap:12px;width:100%;max-width:300px;text-align:center}
-  input{font:inherit;font-size:28px;text-align:center;letter-spacing:.3em;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
-  button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px 16px;color:#fff;cursor:pointer;background:var(--card);border:1px solid var(--line)}
-  .primary{background:linear-gradient(90deg,var(--accent),var(--accent2));border:0;font-size:18px}
-  header{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px 24px;background:rgba(7,7,12,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-  header h1{margin:0;font-size:22px}
-  .live{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ok);margin-right:8px;box-shadow:0 0 12px var(--ok)}
-  .live.off{background:#666;box-shadow:none}
-  .tabs{display:flex;gap:8px}
-  .tabs button.on{background:var(--text);color:#000}
-  #list{padding:20px 24px 60px;display:grid;gap:14px;max-width:1200px;margin:0 auto}
-  .req{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;background:var(--card);border:1px solid var(--line);border-left:6px solid var(--accent2);border-radius:16px;padding:18px 20px}
-  .req.fresh{animation:flash 2.5s ease-out}
-  @keyframes flash{0%{background:#3a1430;border-left-color:var(--accent)}100%{background:var(--card)}}
-  .song{font-size:clamp(26px,3.6vw,44px);font-weight:700;line-height:1.05;word-break:break-word}
-  .artist{font-size:clamp(18px,2.2vw,26px);color:#cfcfe6;margin-top:4px}
-  .meta{font-size:15px;color:var(--muted);margin-top:8px}
-  .count{display:inline-block;background:var(--accent);color:#fff;font-weight:700;border-radius:999px;padding:3px 12px;margin-right:8px;font-size:16px}
-  .actions{display:grid;gap:8px}
-  .actions button{min-width:110px;font-size:16px}
-  .played{background:var(--ok);color:#000;border:0}
-  .empty{text-align:center;color:var(--muted);font-size:22px;padding:80px 0}
-  @media (max-width:560px){.req{grid-template-columns:1fr}.actions{grid-auto-flow:column}}
+  [hidden]{display:none!important}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;cursor:pointer;border:0;color:inherit}
+
+  /* PIN gate */
+  #gate{height:100%;display:grid;place-items:center;padding:16px}
+  #gate form{display:grid;gap:14px;width:100%;max-width:320px;text-align:center}
+  #gate h2{margin:0;font-size:24px}
+  #pin{font:inherit;font-size:32px;text-align:center;letter-spacing:.4em;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;outline:none}
+  #pin:focus{border-color:var(--accent2)}
+  .go{background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:14px;padding:16px;font-size:20px;font-weight:700}
+
+  /* App shell: header + hero + list, fills the screen, no page scroll */
+  #app{height:100%;display:grid;grid-template-rows:auto auto 1fr;gap:14px;padding:14px clamp(12px,2vw,28px) 14px}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;min-width:0}
+  .brand span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--ok);box-shadow:0 0 14px var(--ok);flex:none}
+  .dot.off{background:var(--accent);box-shadow:0 0 14px var(--accent);animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.3}}
+  .count{margin-left:auto;font-size:18px;color:var(--muted);white-space:nowrap}
+  .count b{color:var(--text);font-size:26px}
+  .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px}
+  .seg button{padding:9px 14px;border-radius:9px;font-size:15px;font-weight:700;color:var(--muted);background:none}
+  .seg button.on{background:var(--text);color:#000}
+
+  /* Hero: the one request that matters right now */
+  #hero{display:grid;grid-template-columns:1fr auto;gap:clamp(14px,2vw,28px);align-items:center;background:linear-gradient(135deg,#251036,#11162c);border:2px solid var(--accent2);border-radius:22px;padding:clamp(16px,2.4vw,30px)}
+  #hero.fresh{animation:pop 1.6s ease-out}
+  @keyframes pop{0%{border-color:var(--accent);box-shadow:0 0 0 6px rgba(255,61,127,.35)}100%{box-shadow:0 0 0 0 transparent}}
+  .label{font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .badge{background:var(--accent);color:#fff;border-radius:999px;padding:3px 12px;font-size:18px;letter-spacing:0}
+  .h-song{font-size:clamp(34px,6.2vw,84px);font-weight:700;line-height:1;word-break:break-word}
+  .h-artist{font-size:clamp(20px,3vw,40px);color:#d6d6ee;margin-top:6px}
+  .h-meta{font-size:clamp(14px,1.4vw,18px);color:var(--muted);margin-top:10px}
+  .h-actions{display:grid;gap:12px}
+  .big{min-width:clamp(140px,14vw,220px);padding:clamp(16px,2vw,26px) 20px;border-radius:16px;font-size:clamp(18px,2vw,26px);font-weight:700}
+  .big.play{background:var(--ok);color:#00170a}
+  .big.skip{background:var(--card2);border:1px solid var(--line)}
+  .big:active,.sm:active{transform:scale(.97)}
+  .keys{font-size:12px;color:var(--muted);text-align:center}
+  #empty{display:grid;place-items:center;text-align:center;color:var(--muted);font-size:clamp(20px,2.4vw,30px);border:2px dashed var(--line);border-radius:22px;padding:40px 16px}
+
+  /* Up next list */
+  #listWrap{min-height:0;display:grid;grid-template-rows:auto 1fr;gap:10px}
+  .listHead{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  #list{overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:10px;align-content:start;padding-bottom:8px}
+  .row{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 12px 12px 16px}
+  .row.fresh{animation:rowflash 2s ease-out}
+  @keyframes rowflash{0%{background:#3a1430;border-color:var(--accent)}}
+  .n{font-size:22px;font-weight:700;color:var(--muted);min-width:28px;text-align:center}
+  .n.hot{color:#fff;background:var(--accent);border-radius:10px;padding:2px 8px;font-size:18px}
+  .r-song{font-size:clamp(20px,1.9vw,26px);font-weight:700;line-height:1.1;word-break:break-word}
+  .r-sub{font-size:15px;color:var(--muted);margin-top:3px}
+  .r-actions{display:flex;gap:8px}
+  .sm{width:52px;height:52px;border-radius:12px;font-size:22px;font-weight:700}
+  .sm.play{background:var(--ok);color:#00170a}
+  .sm.skip{background:var(--card2);border:1px solid var(--line);color:var(--muted)}
+  .sm.back{width:auto;padding:0 16px;font-size:15px;background:var(--card2);border:1px solid var(--line)}
+
+  /* Undo toast */
+  #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#fff;color:#000;border-radius:14px;padding:12px 12px 12px 18px;display:flex;gap:14px;align-items:center;font-weight:700;font-size:17px;box-shadow:0 10px 40px rgba(0,0,0,.6);max-width:calc(100% - 32px)}
+  #toast span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #toast button{background:#000;color:#fff;border-radius:10px;padding:10px 16px;font-weight:700;flex:none}
+
+  @media (max-width:640px){
+    #hero{grid-template-columns:1fr}
+    .h-actions{grid-template-columns:1fr 1fr}
+    .big{min-width:0}
+    .keys{display:none}
+    .seg button{padding:8px 10px;font-size:14px}
+  }
 </style>
 </head>
 <body>
 
 <div id="gate">
   <form id="pinForm">
-    <h2 style="margin:0">DJ Screen</h2>
-    <input id="pin" type="password" inputmode="numeric" placeholder="PIN" autofocus>
-    <button class="primary" type="submit">Open</button>
+    <h2>DJ Screen</h2>
+    <input id="pin" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off" autofocus>
+    <button class="go" type="submit">Open</button>
     <div id="pinErr" style="color:var(--accent);min-height:20px"></div>
   </form>
 </div>
 
 <div id="app" hidden>
   <header>
-    <h1><span class="live off" id="dot"></span><span id="title">Requests</span></h1>
-    <div class="tabs">
-      <button id="tQueue" class="on">Queue <span id="nQueue"></span></button>
-      <button id="tDone">Played / skipped</button>
+    <div class="brand"><span class="dot off" id="dot" title="Connection"></span><span id="title">Requests</span></div>
+    <div class="count" id="count"></div>
+    <div class="seg">
+      <button id="sTop" class="on" title="Most requested first">🔥 Top</button>
+      <button id="sNew" title="Newest first">🕒 New</button>
+      <button id="sDone" title="Played and skipped">✓ Done</button>
     </div>
   </header>
-  <div id="list"></div>
+
+  <section id="hero" hidden>
+    <div>
+      <div class="label"><span id="heroLabel">Next up</span><span class="badge" id="heroBadge" hidden></span></div>
+      <div class="h-song" id="hSong"></div>
+      <div class="h-artist" id="hArtist"></div>
+      <div class="h-meta" id="hMeta"></div>
+    </div>
+    <div class="h-actions">
+      <button class="big play" id="hPlay">✓ Played</button>
+      <button class="big skip" id="hSkip">✕ Skip</button>
+      <div class="keys">Keys: P played · S skip · U undo</div>
+    </div>
+  </section>
+  <div id="empty" hidden></div>
+
+  <section id="listWrap">
+    <div class="listHead" id="listHead">Up next</div>
+    <div id="list"></div>
+  </section>
 </div>
+
+<div id="toast" hidden><span id="toastMsg"></span><button id="undoBtn">Undo</button></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -76,77 +147,140 @@ $("pinForm").addEventListener("submit", e => {
 if (unlocked) start();
 
 function start(){
-  $("gate").hidden = true; $("app").hidden = false;
-  $("title").textContent = DJ_NAME + " — Requests";
+  $("gate").hidden = true;
+  $("app").hidden = false;
+  $("title").textContent = DJ_NAME;
   keepAwake();
 
   const db = getDatabase(initializeApp(firebaseConfig));
   onValue(ref(db, ".info/connected"), s => $("dot").classList.toggle("off", !s.val()));
 
-  let tab = "queue", rows = [], seen = null;
-  $("tQueue").onclick = () => { tab="queue"; $("tQueue").classList.add("on"); $("tDone").classList.remove("on"); render(); };
-  $("tDone").onclick  = () => { tab="done";  $("tDone").classList.add("on");  $("tQueue").classList.remove("on"); render(); };
+  let mode = "top", rows = [], seen = null, fresh = new Set(), current = [], lastAction = null, toastTimer;
 
-  onValue(ref(db, "requests"), snap => {
-    const all = snap.val() || {};
-    rows = Object.entries(all).map(([id, r]) => ({ id, ...r }));
-    const fresh = new Set();
-    if (seen) rows.forEach(r => { if (!seen.has(r.id)) fresh.add(r.id); });
-    seen = new Set(rows.map(r => r.id));
-    render(fresh);
-  });
+  const tabs = { top: $("sTop"), new: $("sNew"), done: $("sDone") };
+  for (const [k, b] of Object.entries(tabs)) b.onclick = () => { mode = k; for (const x of Object.values(tabs)) x.classList.toggle("on", x === b); render(); };
 
   const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]/g,"");
 
-  function render(fresh = new Set()){
-    const want = tab === "queue" ? r => r.status === "new" : r => r.status !== "new";
-    const groups = new Map();
-    for (const r of rows.filter(want)) {
+  function groupsFor(filter){
+    const m = new Map();
+    for (const r of rows.filter(filter)) {
       const k = norm(r.song) + "|" + norm(r.artist);
-      if (!groups.has(k)) groups.set(k, []);
-      groups.get(k).push(r);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(r);
     }
-    let list = [...groups.values()].map(g => {
-      g.sort((a,b) => (a.ts||0)-(b.ts||0));
-      return { items: g, first: g[0], latest: g[g.length-1].ts||0, isFresh: g.some(r => fresh.has(r.id)) };
+    return [...m.values()].map(items => {
+      items.sort((a,b) => (a.ts||0)-(b.ts||0));
+      return { items, first: items[0], firstTs: items[0].ts||0, lastTs: items[items.length-1].ts||0,
+               isFresh: items.some(r => fresh.has(r.id)) };
     });
-    list.sort((a,b) => b.latest - a.latest);
-
-    const nQ = rows.filter(r => r.status === "new").length;
-    $("nQueue").textContent = nQ ? `(${nQ})` : "";
-    document.title = nQ ? `(${nQ}) DJ Screen` : "DJ Screen";
-
-    const box = $("list"); box.replaceChildren();
-    if (!list.length) { const d = el("div","empty", tab==="queue" ? "No requests yet — waiting for the crowd 🎧" : "Nothing played yet"); box.append(d); return; }
-
-    for (const g of list) {
-      const card = el("div", "req" + (g.isFresh ? " fresh" : ""));
-      const info = el("div");
-      info.append(el("div","song", g.first.song));
-      if (g.first.artist) info.append(el("div","artist", g.first.artist));
-      const meta = el("div","meta");
-      if (g.items.length > 1) meta.append(el("span","count", "×" + g.items.length));
-      const names = [...new Set(g.items.map(r => r.name).filter(Boolean))];
-      meta.append(document.createTextNode(ago(g.latest) + (names.length ? " · from " + names.join(", ") : "")));
-      if (tab === "done") meta.append(document.createTextNode(" · " + g.first.status));
-      info.append(meta);
-      card.append(info);
-
-      const act = el("div","actions");
-      const setAll = st => { const u = {}; g.items.forEach(r => u[`requests/${r.id}/status`] = st); update(ref(db), u); };
-      if (tab === "queue") {
-        const p = el("button","played","✓ Played"); p.onclick = () => setAll("played");
-        const s = el("button","","Skip"); s.onclick = () => setAll("skipped");
-        act.append(p, s);
-      } else {
-        const b = el("button","","↩ Back to queue"); b.onclick = () => setAll("new");
-        act.append(b);
-      }
-      card.append(act);
-      box.append(card);
-    }
   }
-  setInterval(() => render(), 30000); // refresh "x min ago"
+
+  function setStatus(g, st){
+    const prev = g.items.map(r => [r.id, r.status]);
+    const u = {}; g.items.forEach(r => u[`requests/${r.id}/status`] = st);
+    update(ref(db), u);
+    lastAction = prev;
+    showToast((st === "played" ? "Played: " : st === "skipped" ? "Skipped: " : "Back to queue: ") + g.first.song);
+  }
+  function undo(){
+    if (!lastAction) return;
+    const u = {}; lastAction.forEach(([id, st]) => u[`requests/${id}/status`] = st);
+    update(ref(db), u); lastAction = null; $("toast").hidden = true;
+  }
+  function showToast(msg){
+    $("toastMsg").textContent = msg; $("toast").hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("toast").hidden = true; lastAction = null; }, 6000);
+  }
+  $("undoBtn").onclick = undo;
+
+  $("hPlay").onclick = () => current[0] && setStatus(current[0], "played");
+  $("hSkip").onclick = () => current[0] && setStatus(current[0], "skipped");
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === "u") return undo();
+    if (mode === "done" || !current[0]) return;
+    if (k === "p") setStatus(current[0], "played");
+    if (k === "s") setStatus(current[0], "skipped");
+  });
+
+  function render(){
+    const queue = groupsFor(r => r.status === "new");
+    const pending = queue.reduce((n, g) => n + g.items.length, 0);
+    $("count").innerHTML = "";
+    const b = document.createElement("b"); b.textContent = pending;
+    $("count").append(b, document.createTextNode(pending === 1 ? " request" : " requests"));
+    document.title = pending ? `(${pending}) ${DJ_NAME}` : DJ_NAME;
+
+    let list;
+    if (mode === "done") {
+      list = groupsFor(r => r.status !== "new").sort((a,b) => b.lastTs - a.lastTs);
+    } else if (mode === "top") {
+      // Most requested first; ties go to whoever has waited longest
+      list = queue.sort((a,b) => b.items.length - a.items.length || a.firstTs - b.firstTs);
+    } else {
+      list = queue.sort((a,b) => b.lastTs - a.lastTs);
+    }
+    current = mode === "done" ? [] : list;
+
+    // Hero
+    const hero = mode === "done" ? null : list[0];
+    $("hero").hidden = !hero;
+    $("empty").hidden = !!hero || mode === "done";
+    if (!hero && mode !== "done") $("empty").textContent = "No requests yet — waiting for the crowd 🎧";
+    if (hero) {
+      $("heroLabel").textContent = mode === "top" ? "Most requested" : "Newest request";
+      $("hSong").textContent = hero.first.song;
+      $("hArtist").textContent = hero.first.artist || "";
+      $("hArtist").hidden = !hero.first.artist;
+      $("heroBadge").hidden = hero.items.length < 2;
+      $("heroBadge").textContent = "×" + hero.items.length;
+      $("hMeta").textContent = metaText(hero);
+      $("hero").classList.remove("fresh");
+      if (hero.isFresh) { void $("hero").offsetWidth; $("hero").classList.add("fresh"); }
+    }
+
+    // List
+    const rest = mode === "done" ? list : list.slice(1);
+    $("listHead").textContent = mode === "done" ? "Played & skipped" : rest.length ? "Up next" : "";
+    const box = $("list"); box.replaceChildren();
+    if (mode === "done" && !rest.length) box.append(el("div","r-sub","Nothing played yet."));
+    rest.forEach((g, i) => {
+      const row = el("div", "row" + (g.isFresh ? " fresh" : ""));
+      const n = el("div", g.items.length > 1 ? "n hot" : "n", g.items.length > 1 ? "×" + g.items.length : String(i + 2));
+      if (mode === "done") n.textContent = g.first.status === "played" ? "✓" : "✕";
+      const info = el("div");
+      info.append(el("div","r-song", g.first.song));
+      info.append(el("div","r-sub", [g.first.artist, metaText(g)].filter(Boolean).join(" · ")));
+      const act = el("div","r-actions");
+      if (mode === "done") {
+        const back = el("button","sm back","↩ Queue"); back.onclick = () => setStatus(g, "new"); act.append(back);
+      } else {
+        const p = el("button","sm play","✓"); p.title = "Played"; p.onclick = () => setStatus(g, "played");
+        const s = el("button","sm skip","✕"); s.title = "Skip"; s.onclick = () => setStatus(g, "skipped");
+        act.append(p, s);
+      }
+      row.append(n, info, act);
+      box.append(row);
+    });
+    fresh = new Set();
+  }
+
+  function metaText(g){
+    const names = [...new Set(g.items.map(r => r.name).filter(Boolean))];
+    return ago(g.firstTs) + (names.length ? " · " + names.slice(0,3).join(", ") + (names.length > 3 ? ` +${names.length-3}` : "") : "");
+  }
+  // Subscribe last, so everything above is defined before the first render
+  onValue(ref(db, "requests"), snap => {
+    const all = snap.val() || {};
+    rows = Object.entries(all).map(([id, r]) => ({ id, ...r }));
+    fresh = new Set();
+    if (seen) rows.forEach(r => { if (!seen.has(r.id)) fresh.add(r.id); });
+    seen = new Set(rows.map(r => r.id));
+    render();
+  });
+  setInterval(render, 30000);
 }
 
 function el(tag, cls, text){ const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -156,8 +290,8 @@ function ago(ts){
   return m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.floor(m/60)}h ago`;
 }
 async function keepAwake(){
-  try { let l = await navigator.wakeLock.request("screen");
-    document.addEventListener("visibilitychange", async () => { if (document.visibilityState === "visible") l = await navigator.wakeLock.request("screen"); });
+  try { await navigator.wakeLock.request("screen");
+    document.addEventListener("visibilitychange", async () => { if (document.visibilityState === "visible") { try { await navigator.wakeLock.request("screen"); } catch {} } });
   } catch {}
 }
 </script>
