@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "requests": {
+      ".read": true,
+      ".indexOn": ["ts"],
+      "$id": {
+        ".write": "newData.exists()",
+        ".validate": "newData.hasChildren(['song', 'ts', 'status']) && (data.exists() || newData.child('status').val() === 'new')",
+        "song":   { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100 && (!data.exists() || newData.val() === data.val())" },
+        "artist": { ".validate": "newData.isString() && newData.val().length <= 100 && (!data.exists() || newData.val() === data.val())" },
+        "name":   { ".validate": "newData.isString() && newData.val().length <= 40 && (!data.exists() || newData.val() === data.val())" },
+        "ts":     { ".validate": "(!data.exists() && newData.val() === now) || newData.val() === data.val()" },
+        "status": { ".validate": "newData.val() === 'new' || newData.val() === 'played' || newData.val() === 'skipped'" },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}
