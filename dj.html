@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#050508;--card:#12121c;--card2:#1a1a28;--line:#262638;--text:#fff;--muted:#8b8ba8;--accent:#ff3d7f;--accent2:#7c5cff;--ok:#22d07a;--warn:#ffb020}
+  :root{--bg:#050508;--card:#12121c;--card2:#1a1a28;--line:#2c2a46;--text:#fff;--muted:#9a98bb;--accent:#ff3d7f;--accent2:#7c5cff;--cyan:#4de1ff;--ok:#22d07a;--warn:#ffb020}
   *{box-sizing:border-box}
   [hidden]{display:none!important}
   html,body{height:100%}
@@ -76,6 +76,36 @@
   #toast span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #toast button{background:#000;color:#fff;border-radius:10px;padding:10px 16px;font-weight:700;flex:none}
 
+  /* ===== Living stage background (always on, behind everything) ===== */
+  #stage{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:radial-gradient(ellipse at 50% 120%,#1b0b33 0,#07060f 55%,#030307 100%)}
+  #app{position:relative;z-index:1}
+  .s-orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.45}
+  .s-orb.a{width:60vmax;height:60vmax;left:-20vmax;top:-25vmax;background:#6a1b8f;animation:sDrift 20s ease-in-out infinite alternate}
+  .s-orb.b{width:55vmax;height:55vmax;right:-22vmax;top:10vmax;background:#123f8f;animation:sDrift 26s ease-in-out infinite alternate-reverse}
+  .s-orb.c{width:40vmax;height:40vmax;left:30vw;bottom:-25vmax;background:#8f1b4f;animation:sDrift 17s ease-in-out infinite alternate}
+  @keyframes sDrift{to{transform:translate(10vmax,8vmax) scale(1.15)}}
+  .s-floor{position:absolute;left:-60%;right:-60%;bottom:-6%;height:42%;transform:perspective(420px) rotateX(66deg);transform-origin:50% 100%;
+    background-image:linear-gradient(rgba(255,61,127,.55) 2px,transparent 2px),linear-gradient(90deg,rgba(124,92,255,.55) 2px,transparent 2px);background-size:80px 80px;
+    -webkit-mask-image:linear-gradient(to top,#000 15%,transparent 95%);mask-image:linear-gradient(to top,#000 15%,transparent 95%);animation:sFloor 1.8s linear infinite}
+  @keyframes sFloor{to{background-position:0 80px,0 0}}
+  .s-horizon{position:absolute;left:0;right:0;bottom:39%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--cyan),var(--accent2),transparent);box-shadow:0 0 24px 4px rgba(255,61,127,.45);opacity:.7}
+  .s-beams{position:absolute;left:50%;bottom:-5%;width:0;height:0}
+  .s-beam{position:absolute;bottom:0;left:-2px;width:3px;height:130vh;transform-origin:50% 100%;opacity:.28;border-radius:3px;animation:sSweep var(--d) ease-in-out infinite alternate}
+  .s-beam::after{content:"";position:absolute;inset:0 -10px;background:inherit;filter:blur(14px);opacity:.8}
+  @keyframes sSweep{from{transform:rotate(var(--a0))}to{transform:rotate(var(--a1))}}
+  .s-stars{position:absolute;inset:0 0 40% 0}
+  .s-stars i{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;opacity:.2;animation:twinkle var(--t) ease-in-out infinite}
+  @keyframes twinkle{50%{opacity:.9;box-shadow:0 0 6px #fff}}
+  .s-eq{position:absolute;left:0;right:0;bottom:0;height:16vh;display:flex;align-items:flex-end;gap:4px;padding:0 4px;opacity:.22}
+  .s-eq i{flex:1;border-radius:3px 3px 0 0;background:linear-gradient(to top,var(--accent),var(--accent2),var(--cyan));height:20%;animation:sEq var(--t) ease-in-out infinite alternate}
+  @keyframes sEq{to{height:var(--h)}}
+  /* Glass cards so the stage glows through but text stays crisp */
+  #hero{background:linear-gradient(135deg,rgba(40,14,62,.86),rgba(14,20,48,.86));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 0 50px rgba(124,92,255,.35)}
+  .row{background:rgba(16,15,28,.84);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  #empty{background:rgba(10,9,20,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .seg,.fxbtn{background:rgba(18,18,28,.85)}
+  @media (prefers-reduced-motion:reduce){.s-orb,.s-floor,.s-beam,.s-stars i,.s-eq i{animation:none}}
+
   /* ===== New-request FX overlay ===== */
   .fxbtn{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:15px;font-weight:700;color:var(--muted)}
   .fxbtn.on{color:var(--text);border-color:var(--accent2);box-shadow:0 0 12px rgba(124,92,255,.5)}
@@ -138,7 +168,16 @@
 </head>
 <body>
 
-<div id="gate">
+<div id="stage" aria-hidden="true">
+  <div class="s-orb a"></div><div class="s-orb b"></div><div class="s-orb c"></div>
+  <div class="s-stars" id="sStars"></div>
+  <div class="s-beams" id="sBeams"></div>
+  <div class="s-horizon"></div>
+  <div class="s-floor"></div>
+  <div class="s-eq" id="sEq"></div>
+</div>
+
+<div id="gate" style="position:relative;z-index:1">
   <form id="pinForm">
     <h2>DJ Screen</h2>
     <input id="pin" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off" autofocus>
@@ -203,6 +242,37 @@ import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/fireb
 import { firebaseConfig, DJ_NAME, DJ_PIN } from "./config.js";
 
 const $ = id => document.getElementById(id);
+
+// Build the stage once (stars, slow laser sweeps, background EQ)
+(() => {
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement("i");
+    s.style.left = (Math.random() * 100) + "%"; s.style.top = (Math.random() * 100) + "%";
+    s.style.setProperty("--t", (2 + Math.random() * 4).toFixed(1) + "s");
+    s.style.animationDelay = (-Math.random() * 5).toFixed(1) + "s";
+    $("sStars").append(s);
+  }
+  const cols = ["#ff3d7f","#4de1ff","#7c5cff","#ff3d7f","#4de1ff","#7c5cff"];
+  cols.forEach((c, i) => {
+    const b = document.createElement("div"); b.className = "s-beam";
+    const base = -55 + i * 22;
+    b.style.background = `linear-gradient(to top, ${c}, transparent 85%)`;
+    b.style.setProperty("--a0", (base - 14) + "deg"); b.style.setProperty("--a1", (base + 14) + "deg");
+    b.style.setProperty("--d", (5 + i * 1.3).toFixed(1) + "s");
+    b.style.animationDelay = (-i * 1.7).toFixed(1) + "s";
+    $("sBeams").append(b);
+  });
+  const n = innerWidth < 640 ? 28 : 64;
+  for (let i = 0; i < n; i++) {
+    const bar = document.createElement("i");
+    const mid = 1 - Math.abs(i - n / 2) / (n / 2);       // taller in the middle
+    bar.style.setProperty("--h", (35 + mid * 55 + Math.random() * 10).toFixed(0) + "%");
+    bar.style.setProperty("--t", (0.35 + Math.random() * 0.5).toFixed(2) + "s");
+    bar.style.animationDelay = (-Math.random()).toFixed(2) + "s";
+    $("sEq").append(bar);
+  }
+})();
+
 let unlocked = false;
 try { unlocked = sessionStorage.getItem("djOk") === "1"; } catch {}
 

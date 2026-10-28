@@ -7,31 +7,73 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#0b0b12;--card:#161624;--line:#2a2a40;--text:#f4f4fa;--muted:#9a9ab5;--accent:#ff3d7f;--accent2:#7c5cff;--ok:#2fd27a}
+  :root{--bg:#06060c;--card:rgba(20,18,34,.82);--line:#2c2a48;--text:#f6f6fc;--muted:#a3a3c2;--accent:#ff3d7f;--accent2:#7c5cff;--cyan:#4de1ff;--ok:#22d07a}
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 0%,#2a1340 0,transparent 55%),radial-gradient(circle at 100% 100%,#10223f 0,transparent 50%),var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;display:flex;justify-content:center;padding:28px 16px}
-  main{width:100%;max-width:440px}
-  .eyebrow{color:var(--muted);text-transform:uppercase;letter-spacing:.18em;font-size:12px;margin:0 0 6px}
-  h1{font-size:34px;line-height:1.05;margin:0 0 24px}
-  h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
-  form{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:14px}
+  [hidden]{display:none!important}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;display:flex;justify-content:center;padding:28px 16px 40px;overflow-x:hidden}
+
+  /* Neon backdrop */
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55}
+  .orb.a{width:70vmax;height:70vmax;left:-30vmax;top:-30vmax;background:#5a1a7a;animation:drift 18s ease-in-out infinite alternate}
+  .orb.b{width:60vmax;height:60vmax;right:-30vmax;bottom:-20vmax;background:#123a7a;animation:drift 22s ease-in-out infinite alternate-reverse}
+  @keyframes drift{to{transform:translate(12vmax,10vmax) scale(1.1)}}
+  .floor{position:absolute;left:-50%;right:-50%;bottom:-8%;height:45%;transform:perspective(380px) rotateX(64deg);transform-origin:50% 100%;
+    background-image:linear-gradient(rgba(255,61,127,.45) 2px,transparent 2px),linear-gradient(90deg,rgba(124,92,255,.45) 2px,transparent 2px);background-size:60px 60px;
+    -webkit-mask-image:linear-gradient(to top,#000 20%,transparent);mask-image:linear-gradient(to top,#000 20%,transparent);animation:floor 2.4s linear infinite}
+  @keyframes floor{to{background-position:0 60px,0 0}}
+
+  main{position:relative;z-index:1;width:100%;max-width:440px}
+  .eyebrow{color:var(--cyan);text-transform:uppercase;letter-spacing:.22em;font-size:12px;margin:0 0 8px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);animation:pulse 1.4s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  h1{font-size:38px;line-height:1.02;margin:0 0 22px}
+  h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+  form{background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:20px;display:grid;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
   label{font-size:13px;color:var(--muted);display:grid;gap:6px}
-  input{font:inherit;font-size:17px;color:var(--text);background:#0e0e18;border:1px solid var(--line);border-radius:12px;padding:14px;outline:none}
-  input:focus{border-color:var(--accent)}
+  input{font:inherit;font-size:17px;color:var(--text);background:rgba(8,8,16,.85);border:1px solid var(--line);border-radius:12px;padding:14px;outline:none}
+  input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,61,127,.18)}
   button{font:inherit;font-weight:700;font-size:17px;border:0;border-radius:12px;padding:15px;color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent2));cursor:pointer}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  .msg{min-height:22px;text-align:center;font-size:15px;margin-top:14px}
-  .msg.ok{color:var(--ok)} .msg.err{color:var(--accent)}
-  .tip{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;text-align:center}
-  .tip[hidden]{display:none}
+  button:active{transform:scale(.98)}
+  #btn{position:relative;overflow:hidden}
+  #btn:disabled{cursor:not-allowed;background:#1f1d33;color:var(--muted)}
+  #btn .bar{position:absolute;left:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 1s linear}
+  .note{text-align:center;color:var(--muted);font-size:13px;margin:10px 0 0;min-height:18px}
+  .err{color:var(--accent)}
+
+  .tip{margin-top:18px;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:20px;padding:18px 20px;text-align:center}
   .tip h2{margin:0 0 4px;font-size:18px}
   .tip p{margin:0 0 12px;color:var(--muted);font-size:14px}
-  .email{display:flex;gap:8px;align-items:center;background:#0e0e18;border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 14px}
+  .email{display:flex;gap:8px;align-items:center;background:rgba(8,8,16,.85);border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 14px}
   .email span{flex:1;text-align:left;font-size:15px;word-break:break-all;user-select:all}
   .email button{font-size:14px;padding:10px 14px;flex:none}
+
+  /* Sent pop-up */
+  #sent{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:20px;background:rgba(4,3,10,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:fade .2s ease}
+  @keyframes fade{from{opacity:0}}
+  .sheet{position:relative;width:100%;max-width:380px;text-align:center;background:linear-gradient(160deg,#24113a,#0f1630);border:2px solid var(--accent2);border-radius:26px;padding:30px 22px 22px;box-shadow:0 0 60px rgba(124,92,255,.45);animation:popIn .45s cubic-bezier(.2,1.5,.4,1)}
+  @keyframes popIn{from{transform:scale(.7);opacity:0}}
+  .check{width:84px;height:84px;margin:0 auto 14px;border-radius:50%;background:var(--ok);display:grid;place-items:center;box-shadow:0 0 0 0 rgba(34,208,122,.6);animation:ring 1.4s ease-out .2s}
+  @keyframes ring{to{box-shadow:0 0 0 26px rgba(34,208,122,0)}}
+  .check svg{width:46px;height:46px}
+  .check path{stroke-dasharray:40;stroke-dashoffset:40;animation:draw .45s ease-out .25s forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .sheet h2{margin:0;font-size:32px}
+  .sheet .sub{margin:6px 0 16px;color:#d8d4f2;font-size:17px}
+  .yourSong{background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:16px}
+  .yourSong b{display:block;font-size:20px;word-break:break-word}
+  .yourSong span{color:var(--muted);font-size:15px}
+  .sheet .small{color:var(--muted);font-size:13px;margin:12px 0 0}
+  .sheet button{width:100%}
+  .spark{position:absolute;width:6px;height:6px;border-radius:2px;top:60px;left:50%;opacity:0;animation:spark 1s ease-out forwards}
+  @keyframes spark{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(260deg)}}
+
+  @media (prefers-reduced-motion:reduce){.orb,.floor,.eyebrow::before{animation:none}}
 </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="floor"></div></div>
+
 <main>
   <p class="eyebrow" id="djName">Live now</p>
   <h1>Request a <span>song</span></h1>
@@ -39,15 +81,26 @@
     <label>Song *<input id="song" maxlength="100" required placeholder="e.g. Gasolina"></label>
     <label>Artist<input id="artist" maxlength="100" placeholder="e.g. Daddy Yankee"></label>
     <label>Your name (optional)<input id="name" maxlength="40" placeholder="So the DJ can shout you out"></label>
-    <button id="btn" type="submit">Send request</button>
+    <button id="btn" type="submit"><span id="btnText">Send request</span><span class="bar" id="bar"></span></button>
   </form>
-  <div class="msg" id="msg"></div>
+  <p class="note" id="note"></p>
   <section class="tip" id="tip" hidden>
     <h2>💸 Tip the DJ</h2>
     <p>Send an Interac e-Transfer to:</p>
     <div class="email"><span id="tipEmail"></span><button id="copyBtn" type="button">Copy</button></div>
   </section>
 </main>
+
+<div id="sent" hidden role="dialog" aria-modal="true" aria-labelledby="sentTitle">
+  <div class="sheet" id="sheet">
+    <div class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#00170a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h2 id="sentTitle">Sent! 🎶</h2>
+    <p class="sub" id="sentSub">The DJ can see it now.</p>
+    <div class="yourSong"><b id="sentSong"></b><span id="sentArtist"></span></div>
+    <button id="okBtn" type="button">Nice! 🙌</button>
+    <p class="small" id="sentWait"></p>
+  </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -58,6 +111,8 @@ const db = getDatabase(initializeApp(firebaseConfig));
 const $ = id => document.getElementById(id);
 $("djName").textContent = DJ_NAME + " · live now";
 document.title = "Request a Song · " + DJ_NAME;
+$("sentSub").textContent = DJ_NAME + " can see it now.";
+
 if (TIP_EMAIL) {
   $("tipEmail").textContent = TIP_EMAIL; $("tip").hidden = false;
   $("copyBtn").onclick = async () => {
@@ -72,35 +127,77 @@ if (TIP_EMAIL) {
   };
 }
 
+// ----- Cooldown (one ticking loop only) -----
 const KEY = "lastRequestAt";
 function lastAt(){ try { return +localStorage.getItem(KEY) || 0; } catch { return 0; } }
 function setLast(){ try { localStorage.setItem(KEY, Date.now()); } catch {} }
-
-function tick(){
-  const left = Math.ceil((lastAt() + COOLDOWN_SECONDS*1000 - Date.now())/1000);
-  if (left > 0){ $("btn").disabled = true; $("btn").textContent = `Wait ${left}s`; setTimeout(tick, 1000); }
-  else { $("btn").disabled = false; $("btn").textContent = "Send request"; }
+let sending = false;
+function secondsLeft(){ return Math.max(0, Math.ceil((lastAt() + COOLDOWN_SECONDS*1000 - Date.now())/1000)); }
+function paint(){
+  const left = secondsLeft();
+  if (sending) { $("btn").disabled = true; $("btnText").textContent = "Sending…"; $("bar").style.width = "0"; return; }
+  if (left > 0) {
+    $("btn").disabled = true;
+    $("btnText").textContent = `Next request in ${left}s`;
+    $("bar").style.width = (100 - left / COOLDOWN_SECONDS * 100) + "%";
+    $("note").textContent = "✓ Your last request was sent — the DJ has it.";
+    $("note").className = "note";
+    $("sentWait").textContent = `You can send another in ${left}s.`;
+  } else {
+    $("btn").disabled = false; $("btnText").textContent = "Send request"; $("bar").style.width = "0";
+    if ($("note").className === "note") $("note").textContent = "";
+    $("sentWait").textContent = "You can send another now.";
+  }
 }
-tick();
+paint(); setInterval(paint, 1000);
 
+// ----- Sent pop-up -----
+function showSent(song, artist){
+  $("sentSong").textContent = song;
+  $("sentArtist").textContent = artist || ""; $("sentArtist").hidden = !artist;
+  const sheet = $("sheet");
+  sheet.querySelectorAll(".spark").forEach(s => s.remove());
+  const colors = ["#ff3d7f","#7c5cff","#4de1ff","#22d07a","#ffd23f"];
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement("i"); s.className = "spark";
+    const a = Math.random() * Math.PI * 2, d = 70 + Math.random() * 90;
+    s.style.background = colors[i % colors.length];
+    s.style.setProperty("--x", Math.cos(a) * d + "px"); s.style.setProperty("--y", Math.sin(a) * d + "px");
+    s.style.animationDelay = (0.15 + Math.random() * 0.15) + "s";
+    sheet.append(s);
+  }
+  $("sent").hidden = false; paint();
+  $("okBtn").focus();
+}
+function hideSent(){ $("sent").hidden = true; }
+$("okBtn").onclick = hideSent;
+$("sent").addEventListener("click", e => { if (e.target.id === "sent") hideSent(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") hideSent(); });
+
+// ----- Submit -----
 $("f").addEventListener("submit", async e => {
   e.preventDefault();
-  const song = $("song").value.trim();
-  if (!song) return;
-  $("btn").disabled = true;
+  const song = $("song").value.trim(), artist = $("artist").value.trim();
+  if (!song || sending || secondsLeft() > 0) return;
+  sending = true; paint();
   try {
-    await push(ref(db, "requests"), {
-      song, artist: $("artist").value.trim(), name: $("name").value.trim(),
-      ts: serverTimestamp(), status: "new"
-    });
+    // Firebase waits forever when offline, so give up after 10s and tell the guest
+    await Promise.race([
+      push(ref(db, "requests"), { song, artist, name: $("name").value.trim(), ts: serverTimestamp(), status: "new" }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 10000))
+    ]);
     setLast();
-    $("msg").className = "msg ok"; $("msg").textContent = "🎶 Sent! The DJ can see it now.";
     $("song").value = ""; $("artist").value = "";
+    sending = false; paint();
+    showSent(song, artist);
   } catch (err) {
     console.error(err);
-    $("msg").className = "msg err"; $("msg").textContent = "Couldn't send — try again in a moment.";
+    sending = false; paint();
+    $("note").className = "note err";
+    $("note").textContent = err.message === "timeout"
+      ? "Couldn't reach the DJ — check your signal and try again."
+      : "Couldn't send — try again in a moment.";
   }
-  tick();
 });
 </script>
 </body>
