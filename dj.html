@@ -156,6 +156,22 @@
     #fx.run .fx-flash,#fx.run .fx-scan{animation:none}
   }
 
+  /* ===== Peripheral alerts: screen-edge glow, NEW chip, NEW tags ===== */
+  #edge{position:fixed;inset:0;z-index:45;pointer-events:none;opacity:0;
+    box-shadow:inset 0 0 0 10px #ff3d7f,inset 0 0 90px 30px rgba(255,61,127,.7),inset 0 0 240px 80px rgba(124,92,255,.4)}
+  #edge.on{animation:edgeFlash .45s ease-in-out 0s 6 alternate,edgePulse 1.8s ease-in-out 2.7s infinite}
+  @keyframes edgeFlash{from{opacity:0}to{opacity:1}}
+  @keyframes edgePulse{0%,100%{opacity:.45}50%{opacity:1}}
+  .newchip{border:0;background:var(--accent);color:#fff;border-radius:999px;padding:9px 16px;font-size:16px;font-weight:700;white-space:nowrap;animation:chip .8s ease-in-out infinite alternate}
+  @keyframes chip{from{box-shadow:0 0 0 rgba(255,61,127,0)}to{box-shadow:0 0 26px rgba(255,61,127,.95)}}
+  .newtag{display:inline-block;background:#fff;color:#000;border-radius:6px;padding:2px 8px;font-size:13px;letter-spacing:.12em;font-weight:700;animation:tag .7s steps(1) infinite}
+  @keyframes tag{50%{background:var(--accent);color:#fff}}
+  #hero.unread{border-color:var(--accent);animation:heroGlow 1.2s ease-in-out infinite alternate}
+  @keyframes heroGlow{from{box-shadow:0 0 30px rgba(255,61,127,.35)}to{box-shadow:0 0 70px rgba(255,61,127,.85)}}
+  .row.unread{border-color:var(--accent);box-shadow:0 0 24px rgba(255,61,127,.55)}
+  .row .newtag{margin-left:8px;font-size:11px;vertical-align:middle}
+  @media (prefers-reduced-motion:reduce){#edge.on{animation:none;opacity:.8}.newchip,.newtag,#hero.unread{animation:none}}
+
   @media (max-width:640px){
     #hero{grid-template-columns:1fr}
     .h-actions{grid-template-columns:1fr 1fr}
@@ -196,8 +212,10 @@
 <div id="app" hidden>
   <header>
     <div class="brand"><span class="dot off" id="dot" title="Connection"></span><span id="title">Requests</span></div>
+    <button class="newchip" id="newChip" hidden title="Tap to clear">● NEW</button>
     <div class="count" id="count"></div>
     <button class="fxbtn on" id="fxBtn" title="Animation for new requests">✨ FX</button>
+    <button class="fxbtn" id="notifBtn" title="Desktop pop-up when this window is in the background">🔔 Alerts</button>
     <div class="seg">
       <button id="sTop" class="on" title="Most requested first">🔥 Top</button>
       <button id="sNew" title="Newest first">🕒 New</button>
@@ -207,7 +225,7 @@
 
   <section id="hero" hidden>
     <div>
-      <div class="label"><span id="heroLabel">Next up</span><span class="badge" id="heroBadge" hidden></span></div>
+      <div class="label"><span class="newtag" id="heroNew" hidden>NEW</span><span id="heroLabel">Next up</span><span class="badge" id="heroBadge" hidden></span></div>
       <div class="h-song" id="hSong"></div>
       <div class="h-artist" id="hArtist"></div>
       <div class="h-meta" id="hMeta"></div>
@@ -241,6 +259,8 @@
     <div class="fx-more" id="fxMore" hidden></div>
   </div>
 </div>
+
+<div id="edge" aria-hidden="true"></div>
 
 <div id="toast" hidden><span id="toastMsg"></span><button id="undoBtn">Undo</button></div>
 
@@ -493,6 +513,7 @@ function start(){
   const db = getDatabase(initializeApp(firebaseConfig));
   onValue(ref(db, ".info/connected"), s => $("dot").classList.toggle("off", !s.val()));
 
+  let unread = new Set(), baseTitle = DJ_NAME;
   let mode = "top", rows = [], seen = null, fresh = new Set(), current = [], lastAction = null, toastTimer;
 
   const tabs = { top: $("sTop"), new: $("sNew"), done: $("sDone") };
@@ -516,6 +537,7 @@ function start(){
 
   function setStatus(g, st){
     const prev = g.items.map(r => [r.id, r.status]);
+    g.items.forEach(r => unread.delete(r.id));
     stage.log(st === "played" ? `> deck_a.play("${g.first.song}") ✓` : st === "skipped" ? `> queue.skip("${g.first.song}")` : `> queue.restore("${g.first.song}")`, "cy");
     const u = {}; g.items.forEach(r => u[`requests/${r.id}/status`] = st);
     update(ref(db), u);
@@ -550,7 +572,9 @@ function start(){
     $("count").innerHTML = "";
     const b = document.createElement("b"); b.textContent = pending;
     $("count").append(b, document.createTextNode(pending === 1 ? " request" : " requests"));
-    document.title = pending ? `(${pending}) ${DJ_NAME}` : DJ_NAME;
+    baseTitle = pending ? `(${pending}) ${DJ_NAME}` : DJ_NAME;
+    if (!unread.size) document.title = baseTitle;
+    paintAlerts();
     stage.setQueue(pending);
 
     let list;
@@ -578,6 +602,9 @@ function start(){
       $("heroBadge").textContent = "×" + hero.items.length;
       $("hMeta").textContent = metaText(hero);
       stage.setNow(hero.first.song + (hero.first.artist ? " — " + hero.first.artist : ""));
+      const heroUnread = hero.items.some(r => unread.has(r.id));
+      $("hero").classList.toggle("unread", heroUnread);
+      $("heroNew").hidden = !heroUnread;
       $("hero").classList.remove("fresh");
       if (hero.isFresh) { void $("hero").offsetWidth; $("hero").classList.add("fresh"); }
     }
@@ -588,11 +615,14 @@ function start(){
     const box = $("list"); box.replaceChildren();
     if (mode === "done" && !rest.length) box.append(el("div","r-sub","Nothing played yet."));
     rest.forEach((g, i) => {
-      const row = el("div", "row" + (g.isFresh ? " fresh" : ""));
+      const isNew = mode !== "done" && g.items.some(r => unread.has(r.id));
+      const row = el("div", "row" + (g.isFresh ? " fresh" : "") + (isNew ? " unread" : ""));
       const n = el("div", g.items.length > 1 ? "n hot" : "n", g.items.length > 1 ? "×" + g.items.length : String(i + 2));
       if (mode === "done") n.textContent = g.first.status === "played" ? "✓" : "✕";
       const info = el("div");
-      info.append(el("div","r-song", g.first.song));
+      const songEl = el("div","r-song", g.first.song);
+      if (isNew) songEl.append(el("span","newtag","NEW"));
+      info.append(songEl);
       info.append(el("div","r-sub", [g.first.artist, metaText(g)].filter(Boolean).join(" · ")));
       const act = el("div","r-actions");
       if (mode === "done") {
@@ -638,8 +668,10 @@ function start(){
   function announce(items){
     if (!fxOn || !items.length) return;
     fxQueue.push(items);
+    if (document.hidden) return;          // play it when the DJ comes back to this window
     if (!fxBusy) playNext();
   }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && fxQueue.length && !fxBusy) playNext(); });
   function playNext(){
     // Collapse everything waiting into one show: newest song as headline, "+N more"
     const items = fxQueue.flat(); fxQueue = [];
@@ -657,6 +689,55 @@ function start(){
   // The FX never blocks taps (pointer-events:none); Esc hides it early on a laptop
   document.addEventListener("keydown", e => { if (e.key === "Escape") { $("fx").classList.remove("run"); } });
 
+  // ----- Peripheral alerts -----
+  // Edge glow + NEW chip + NEW tags stay on until the DJ acknowledges (tap/click/key, or Played/Skip).
+  function paintAlerts(){
+    const live = [...unread].filter(id => rows.some(r => r.id === id && r.status === "new"));
+    unread = new Set(live);
+    const n = unread.size;
+    $("newChip").hidden = !n;
+    $("newChip").textContent = n === 1 ? "● 1 NEW" : `● ${n} NEW`;
+    if (!n) { $("edge").classList.remove("on"); document.title = baseTitle; }
+  }
+  function flashEdge(){ const e = $("edge"); e.classList.remove("on"); void e.offsetWidth; e.classList.add("on"); }
+  function ack(){ if (!unread.size) return; unread.clear(); render(); }
+  $("newChip").onclick = e => { e.stopPropagation(); ack(); };
+  $("app").addEventListener("pointerdown", () => { if (unread.size) setTimeout(ack, 150); });
+  document.addEventListener("keydown", e => { if (e.key !== "u" && e.key !== "U") setTimeout(ack, 150); });
+
+  // Blink the browser tab title so it catches the eye even from another tab
+  setInterval(() => {
+    if (!unread.size) return;
+    const latest = rows.filter(r => unread.has(r.id)).sort((a,b) => (b.ts||0)-(a.ts||0))[0];
+    document.title = document.title.startsWith("🔴") ? baseTitle : `🔴 NEW: ${latest ? latest.song : "request"}`;
+  }, 900);
+
+  // Optional desktop notifications (for when this window is behind the DJ software)
+  let notifOn = false;
+  try { notifOn = localStorage.getItem("djNotif") === "on" && "Notification" in window && Notification.permission === "granted"; } catch {}
+  const paintNotif = () => { $("notifBtn").classList.toggle("on", notifOn); };
+  if (!("Notification" in window)) $("notifBtn").hidden = true;
+  paintNotif();
+  $("notifBtn").onclick = async () => {
+    if (notifOn) { notifOn = false; }
+    else {
+      const p = Notification.permission === "default" ? await Notification.requestPermission() : Notification.permission;
+      if (p === "granted") { notifOn = true; try { new Notification("🔔 Alerts on", { body: "You'll get a pop-up when a song is requested and this window isn't in front." }); } catch {} }
+      else showToast("Notifications are blocked — allow them in the browser's site settings");
+    }
+    try { localStorage.setItem("djNotif", notifOn ? "on" : "off"); } catch {}
+    paintNotif();
+  };
+  function notify(items){
+    if (!notifOn || !items.length || (!document.hidden && document.hasFocus())) return;
+    const r = items[items.length - 1];
+    try {
+      const n = new Notification(items.length > 1 ? `🎶 ${items.length} new requests` : "🎶 New song request", {
+        body: r.song + (r.artist ? " — " + r.artist : "") + (r.name ? `  (from ${r.name})` : ""), tag: "dj-request", renotify: true });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch {}
+  }
+
   // Subscribe last, so everything above is defined before the first render
   onValue(ref(db, "requests"), snap => {
     const all = snap.val() || {};
@@ -666,6 +747,8 @@ function start(){
     seen = new Set(rows.map(r => r.id));
     const arrivals = rows.filter(r => fresh.has(r.id) && r.status === "new");
     arrivals.forEach(r => stage.log(`> INCOMING REQUEST :: "${r.song}"${r.artist ? " — " + r.artist : ""}${r.name ? "  [from " + r.name + "]" : ""}`, "hot"));
+    arrivals.forEach(r => unread.add(r.id));
+    if (arrivals.length) { flashEdge(); notify(arrivals); }
     announce(arrivals);
     render();
   });
