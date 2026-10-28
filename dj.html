@@ -277,6 +277,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { firebaseConfig, DJ_NAME, DJ_PIN } from "./config.js";
+import { isHalloween, PAL } from "./theme.js";
 
 const $ = id => document.getElementById(id);
 
@@ -291,7 +292,8 @@ const stage = (() => {
   let W = 0, H = 0, cols = [], surgeAt = -99, t0 = performance.now();
 
   const GLYPHS = "0123456789ABCDEF♪♫♬▲▼◆<>/=+#$%".split("");
-  const WORDS = ["BPM","DROP","SYNC","CUE","BASS","LOOP","KICK","SNARE","FADER","MASTER","126","128","8A","PITCH","GAIN","REVERB","DECK_A","DECK_B","HYPE"];
+  const WORDS = ["BPM","DROP","SYNC","CUE","BASS","LOOP","KICK","SNARE","FADER","MASTER","126","128","8A","PITCH","GAIN","REVERB","DECK_A","DECK_B","HYPE"]
+    .concat(isHalloween ? ["BOO","HEX","RIP","CRYPT","GHOST","BOO","SPOOKY"] : []);
   const COL_W = 18;
 
   function resize(){
@@ -314,7 +316,7 @@ const stage = (() => {
     }
     return c.buf.shift();
   }
-  const TINT = { green:"57,255,136", pink:"255,61,127", cyan:"77,225,255" };
+  const TINT = { green: isHalloween ? "157,255,74" : "57,255,136", pink: PAL.hot, cyan: isHalloween ? "190,150,255" : PAL.cool };
 
   // Fake but musical "audio" energy per band
   function energy(i, t, beat){
@@ -361,12 +363,12 @@ const stage = (() => {
 
     // Outer dashed rotating ring
     vc.save(); vc.translate(cx, cy);
-    vc.strokeStyle = "rgba(77,225,255,.35)"; vc.lineWidth = 2; vc.setLineDash([4,10]); vc.lineDashOffset = -t*30;
+    vc.strokeStyle = `rgba(${PAL.cool},.35)`; vc.lineWidth = 2; vc.setLineDash([4,10]); vc.lineDashOffset = -t*30;
     vc.beginPath(); vc.arc(0,0,R*1.62,0,Math.PI*2); vc.stroke(); vc.setLineDash([]);
     // Beat ticks
     for (let k = 0; k < 32; k++) {
       const a = k/32*Math.PI*2 - ang*0.25, on = k % 4 === 0;
-      vc.strokeStyle = on ? `rgba(255,61,127,${.4+beat*.5})` : "rgba(255,255,255,.12)";
+      vc.strokeStyle = on ? `rgba(${PAL.hot},${.4+beat*.5})` : "rgba(255,255,255,.12)";
       vc.lineWidth = on ? 3 : 1.5;
       vc.beginPath(); vc.moveTo(Math.cos(a)*R*1.5, Math.sin(a)*R*1.5); vc.lineTo(Math.cos(a)*R*(on?1.42:1.46), Math.sin(a)*R*(on?1.42:1.46)); vc.stroke();
     }
@@ -376,7 +378,7 @@ const stage = (() => {
       const f = k / N, e = energy(Math.abs(f - .5) * 2 * 0.6, t, beat);
       const a = f * Math.PI * 2 + ang * 0.15;
       const r1 = R * 1.06, r2 = r1 + R * (0.06 + e * 0.32);
-      const hue = 320 + f * 200;
+      const hue = isHalloween ? 265 + f * 125 : 320 + f * 200;   // halloween: purple -> magenta -> orange
       vc.strokeStyle = `hsla(${hue % 360},95%,62%,${.45 + e*.45})`; vc.lineWidth = Math.max(2, R*0.022);
       vc.beginPath(); vc.moveTo(Math.cos(a)*r1, Math.sin(a)*r1); vc.lineTo(Math.cos(a)*r2, Math.sin(a)*r2); vc.stroke();
     }
@@ -385,7 +387,7 @@ const stage = (() => {
     const dg = vc.createRadialGradient(0,0,R*0.1,0,0,R);
     dg.addColorStop(0,"#16141f"); dg.addColorStop(1,"#050508");
     vc.fillStyle = dg; vc.beginPath(); vc.arc(0,0,R,0,Math.PI*2); vc.fill();
-    vc.strokeStyle = `rgba(124,92,255,${.5+beat*.4})`; vc.lineWidth = 3; vc.stroke();
+    vc.strokeStyle = `rgba(${PAL.mid},${.5+beat*.4})`; vc.lineWidth = 3; vc.stroke();
     for (let k = 0; k < 16; k++) { vc.strokeStyle = "rgba(255,255,255,.045)"; vc.lineWidth = 1; vc.beginPath(); vc.arc(0,0,R*(0.38 + k*0.038),0,Math.PI*2); vc.stroke(); }
     // Light sheen
     vc.strokeStyle = "rgba(255,255,255,.13)"; vc.lineWidth = R*0.18; vc.lineCap = "round";
@@ -394,11 +396,34 @@ const stage = (() => {
     vc.lineCap = "butt";
     // Label
     const lg = vc.createLinearGradient(-R*.3,-R*.3,R*.3,R*.3);
-    lg.addColorStop(0,"#ff3d7f"); lg.addColorStop(1,"#7c5cff");
+    if (isHalloween) { lg.addColorStop(0,"#ffa040"); lg.addColorStop(1,"#d24a00"); }
+    else { lg.addColorStop(0,"#ff3d7f"); lg.addColorStop(1,"#7c5cff"); }
     vc.fillStyle = lg; vc.beginPath(); vc.arc(0,0,R*0.3,0,Math.PI*2); vc.fill();
-    vc.fillStyle = "rgba(0,0,0,.35)"; vc.fillRect(-R*0.02,-R*0.3,R*0.04,R*0.14);
-    vc.fillStyle = "#fff"; vc.font = `700 ${Math.round(R*0.075)}px ui-monospace,Menlo,monospace`; vc.textAlign = "center";
-    vc.fillText(DJ_NAME.toUpperCase(), 0, R*0.13);
+    if (isHalloween) {
+      // Jack-o'-lantern face on the label, glowing with the beat
+      const L = R * 0.3, glow = `rgba(255,${200 + Math.round(beat*55)},90,1)`;
+      vc.save(); vc.beginPath(); vc.arc(0,0,L,0,Math.PI*2); vc.clip();   // keep the ribs on the label
+      vc.strokeStyle = "rgba(120,40,0,.45)"; vc.lineWidth = 2;
+      for (const k of [-0.55, 0, 0.55]) { vc.beginPath(); vc.ellipse(L*k, 0, L*0.32, L*0.95, 0, 0, Math.PI*2); vc.stroke(); }
+      vc.restore();
+      vc.fillStyle = "#1a0700"; vc.shadowColor = glow; vc.shadowBlur = 6 + beat * 14;
+      const tri = (x1,y1,x2,y2,x3,y3) => { vc.beginPath(); vc.moveTo(x1,y1); vc.lineTo(x2,y2); vc.lineTo(x3,y3); vc.closePath(); vc.fill(); };
+      tri(-L*0.55,-L*0.12, -L*0.32,-L*0.5, -L*0.12,-L*0.12);      // left eye
+      tri( L*0.12,-L*0.12,  L*0.32,-L*0.5,  L*0.55,-L*0.12);      // right eye
+      vc.beginPath();                                               // wide toothy grin
+      vc.moveTo(-L*0.72, L*0.1);
+      vc.quadraticCurveTo(0, L*0.32, L*0.72, L*0.1);                // top lip
+      vc.quadraticCurveTo(0, L*0.78, -L*0.72, L*0.1);               // bottom lip
+      vc.fill();
+      vc.fillStyle = lg;                                            // two pumpkin-coloured teeth
+      vc.fillRect(-L*0.26, L*0.2, L*0.16, L*0.17);
+      vc.fillRect( L*0.10, L*0.2, L*0.16, L*0.17);
+      vc.shadowBlur = 0;
+    } else {
+      vc.fillStyle = "rgba(0,0,0,.35)"; vc.fillRect(-R*0.02,-R*0.3,R*0.04,R*0.14);
+      vc.fillStyle = "#fff"; vc.font = `700 ${Math.round(R*0.075)}px ui-monospace,Menlo,monospace`; vc.textAlign = "center";
+      vc.fillText(DJ_NAME.toUpperCase(), 0, R*0.13);
+    }
     vc.fillStyle = "#020205"; vc.beginPath(); vc.arc(0,0,R*0.035,0,Math.PI*2); vc.fill();
     vc.restore();
 
@@ -407,7 +432,7 @@ const stage = (() => {
       const p = sinceSurge / 1.4;
       vc.strokeStyle = `rgba(255,255,255,${(1-p)*0.8})`; vc.lineWidth = 6*(1-p)+1;
       vc.beginPath(); vc.arc(cx, cy, R*(1 + p*3), 0, Math.PI*2); vc.stroke();
-      vc.strokeStyle = `rgba(255,61,127,${(1-p)*0.6})`;
+      vc.strokeStyle = `rgba(${PAL.hot},${(1-p)*0.6})`;
       vc.beginPath(); vc.arc(cx, cy, R*(1 + p*2.2), 0, Math.PI*2); vc.stroke();
     }
 
@@ -417,7 +442,7 @@ const stage = (() => {
     for (let x = 0; x < W; x += 3) {
       const a = waveAt(x + scroll) * wh;
       const played = x < mid;
-      vc.fillStyle = played ? "rgba(124,92,255,.35)" : (a > wh*0.62 ? "rgba(255,255,255,.75)" : "rgba(77,225,255,.6)");
+      vc.fillStyle = played ? `rgba(${PAL.mid},.35)` : (a > wh*0.62 ? "rgba(255,255,255,.75)" : `rgba(${PAL.cool},.6)`);
       vc.fillRect(x, wy - a, 2, a*2);
     }
     // Beat grid
@@ -425,7 +450,7 @@ const stage = (() => {
     for (let x = (-(scroll) % pxPerBeat + pxPerBeat) % pxPerBeat; x < W; x += pxPerBeat) {
       vc.fillStyle = "rgba(255,255,255,.12)"; vc.fillRect(x, wy - wh - 6, 1, 6);
     }
-    vc.fillStyle = "#fff"; vc.shadowColor = "#ff3d7f"; vc.shadowBlur = 14;
+    vc.fillStyle = "#fff"; vc.shadowColor = PAL.hotHex; vc.shadowBlur = 14;
     vc.fillRect(mid - 1, wy - wh - 10, 2, wh*2 + 20); vc.shadowBlur = 0;
 
     // ---- Spectrum analyzer along the bottom ----
@@ -434,7 +459,7 @@ const stage = (() => {
       const f = k / bars, e = energy(f, t, beat) * (sinceSurge >= 0 && sinceSurge < 1 ? 1.25 : 1);
       const h = Math.min(specH, specH * e);
       const g = vc.createLinearGradient(0, H, 0, H - specH);
-      g.addColorStop(0, "rgba(255,61,127,.75)"); g.addColorStop(.6, "rgba(124,92,255,.65)"); g.addColorStop(1, "rgba(77,225,255,.7)");
+      g.addColorStop(0, `rgba(${PAL.hot},.75)`); g.addColorStop(.6, `rgba(${PAL.mid},.65)`); g.addColorStop(1, `rgba(${PAL.cool},.7)`);
       vc.fillStyle = g; vc.fillRect(k*bw + 2, H - h, bw - 4, h);
       vc.fillStyle = "rgba(255,255,255,.8)"; vc.fillRect(k*bw + 2, H - h - 4, bw - 4, 2);   // peak cap
     }
@@ -456,6 +481,12 @@ const stage = (() => {
     () => `> loop ${[2,4,8,16][rnd(4)]} beats armed`,
     () => `> master.out -${(5+Math.random()*2).toFixed(1)} LUFS  peak -0.${rnd(9)}dB`,
     () => `> scanning request_queue ... ${queueLen} pending`,
+    ...(isHalloween ? [
+      () => "> summoning bass from the crypt ... OK",
+      () => `> ghost_notes detected: ${1+rnd(6)}`,
+      () => "> fog_machine.level = 0.66",
+      () => `> pumpkin.glow sync @ ${BPM} BPM ✓`,
+    ] : []),
     () => `> buffer ${[256,512][rnd(2)]} samples @ 48kHz OK`,
   ];
   function rnd(n){ return Math.floor(Math.random()*n); }
@@ -687,7 +718,7 @@ function start(){
     if (fxOn) announce([{ song: "FX on", artist: "Ready for the crowd", name: "" }]); };
 
   // Build beams and EQ bars once
-  const beamColors = ["#ff3d7f","#7c5cff","#4de1ff","#ff3d7f","#7c5cff","#4de1ff","#ff3d7f","#7c5cff"];
+  const beamColors = [PAL.hotHex, PAL.midHex, PAL.coolHex, PAL.hotHex, PAL.midHex, PAL.coolHex, PAL.hotHex, PAL.midHex];
   beamColors.forEach((c, i) => {
     const b = document.createElement("div"); b.className = "beam";
     const base = -63 + i * 18;                         // fan from -63° to +63°

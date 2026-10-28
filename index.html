@@ -157,6 +157,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { firebaseConfig, DJ_NAME, TIP_EMAIL, COOLDOWN_SECONDS } from "./config.js";
+import { isHalloween } from "./theme.js";
 
 const db = getDatabase(initializeApp(firebaseConfig));
 const $ = id => document.getElementById(id);
@@ -208,7 +209,7 @@ function showSent(song, artist){
   $("sentArtist").textContent = artist || ""; $("sentArtist").hidden = !artist;
   const sheet = $("sheet");
   sheet.querySelectorAll(".spark").forEach(s => s.remove());
-  const colors = ["#ff3d7f","#7c5cff","#4de1ff","#22d07a","#ffd23f"];
+  const colors = isHalloween ? ["#ff7a1a","#8b3dff","#9dff4a","#ffd23f","#ffffff"] : ["#ff3d7f","#7c5cff","#4de1ff","#22d07a","#ffd23f"];
   for (let i = 0; i < 22; i++) {
     const s = document.createElement("i"); s.className = "spark";
     const a = Math.random() * Math.PI * 2, d = 70 + Math.random() * 90;

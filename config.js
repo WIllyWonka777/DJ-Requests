@@ -25,3 +25,7 @@ export const TIP_EMAIL = "f.bravo2591@gmail.com";
 
 // 5) Seconds a guest must wait between requests (light spam protection).
 export const COOLDOWN_SECONDS = 45;
+
+// 6) Seasonal look: "auto" = Halloween from Oct 20 to Nov 1 (normal the rest of the year),
+//    "halloween" = always on, "default" = always off.
+export const THEME = "auto";
