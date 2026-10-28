@@ -68,7 +68,33 @@
   .spark{position:absolute;width:6px;height:6px;border-radius:2px;top:60px;left:50%;opacity:0;animation:spark 1s ease-out forwards}
   @keyframes spark{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),var(--y)) rotate(260deg)}}
 
-  @media (prefers-reduced-motion:reduce){.orb,.floor,.eyebrow::before{animation:none}}
+  /* Song search */
+  .searchBox{position:relative}
+  .searchBox svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;opacity:.6;pointer-events:none}
+  #q{width:100%;padding-left:44px;font-size:18px}
+  #searchStep{display:grid;gap:10px}
+  .hint{font-size:12px;color:var(--muted);margin:0 2px;display:flex;justify-content:space-between;gap:8px}
+  #results{display:grid;gap:6px;max-height:min(52vh,420px);overflow-y:auto;margin:0 -6px;padding:0 6px;overscroll-behavior:contain}
+  .res{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;width:100%;text-align:left;background:rgba(8,8,16,.7);border:1px solid var(--line);border-radius:12px;padding:11px 14px;color:var(--text);font-weight:400}
+  .res:hover,.res:focus-visible{border-color:var(--accent2);outline:none}
+  .res b{display:block;font-size:16px;font-weight:700;line-height:1.2;word-break:break-word}
+  .res span{display:block;font-size:13px;color:var(--muted);margin-top:2px;word-break:break-word}
+  .res i{font-style:normal;font-size:20px;color:var(--accent)}
+  .res mark{background:none;color:var(--cyan)}
+  .secLbl{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:2px 2px 0}
+  .linkBtn{background:none;border:1px dashed var(--line);color:var(--text);font-weight:600;font-size:15px;padding:13px}
+  .linkBtn b{color:var(--cyan)}
+  .back{background:none;color:var(--muted);font-size:14px;font-weight:600;padding:4px 0;text-align:left;width:auto}
+  .pick{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:linear-gradient(135deg,rgba(255,61,127,.16),rgba(124,92,255,.16));border:1px solid var(--accent2);border-radius:14px;padding:14px}
+  .pick .disc{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle,#ff3d7f 0 22%,#111 23% 100%);box-shadow:0 0 0 2px #2c2a48;animation:spin 3s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .pick b{display:block;font-size:18px;line-height:1.2;word-break:break-word}
+  .pick span{display:block;color:#d8d4f2;font-size:14px;margin-top:2px}
+  .pick button{background:rgba(0,0,0,.35);border:1px solid var(--line);font-size:13px;padding:8px 12px}
+  .freeNote{font-size:13px;color:var(--muted);margin:-4px 2px 0}
+  .loading{color:var(--muted);font-size:14px;padding:10px 4px}
+
+  @media (prefers-reduced-motion:reduce){.orb,.floor,.eyebrow::before,.pick .disc{animation:none}}
 </style>
 </head>
 <body>
@@ -78,10 +104,35 @@
   <p class="eyebrow" id="djName">Live now</p>
   <h1>Request a <span>song</span></h1>
   <form id="f" autocomplete="off">
-    <label>Song *<input id="song" maxlength="100" required placeholder="e.g. Gasolina"></label>
-    <label>Artist<input id="artist" maxlength="100" placeholder="e.g. Daddy Yankee"></label>
-    <label>Your name (optional)<input id="name" maxlength="40" placeholder="So the DJ can shout you out"></label>
-    <button id="btn" type="submit"><span id="btnText">Send request</span><span class="bar" id="bar"></span></button>
+    <!-- Step 1: search the DJ's library -->
+    <div id="searchStep">
+      <div class="searchBox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="search" enterkeyhint="search" placeholder="Search songs or artists…" aria-label="Search songs or artists">
+      </div>
+      <p class="hint"><span id="libInfo">Loading the DJ's library…</span><span id="resCount"></span></p>
+      <p class="secLbl" id="resLabel"></p>
+      <div id="results" role="list"></div>
+      <button type="button" class="linkBtn" id="anywayBtn">Can't find it? <b>Request it anyway →</b></button>
+    </div>
+
+    <!-- Step 2a: chosen from the library -->
+    <div id="pickStep" hidden>
+      <div class="pick"><div class="disc"></div><div><b id="pickTitle"></b><span id="pickArtist"></span></div><button type="button" id="changeBtn">Change</button></div>
+    </div>
+
+    <!-- Step 2b: not in the library, type it -->
+    <div id="freeStep" hidden style="display:grid;gap:14px">
+      <button type="button" class="back" id="backBtn">← Back to search</button>
+      <p class="freeNote">Type it in and the DJ will see it, even if it isn't in his crates.</p>
+      <label>Song *<input id="song" maxlength="100" placeholder="e.g. Gasolina"></label>
+      <label>Artist<input id="artist" maxlength="100" placeholder="e.g. Daddy Yankee"></label>
+    </div>
+
+    <div id="sendStep" hidden style="display:grid;gap:14px">
+      <label>Your name (optional)<input id="name" maxlength="40" placeholder="So the DJ can shout you out"></label>
+      <button id="btn" type="submit"><span id="btnText">Send request</span><span class="bar" id="bar"></span></button>
+    </div>
   </form>
   <p class="note" id="note"></p>
   <section class="tip" id="tip" hidden>
@@ -174,21 +225,129 @@ $("okBtn").onclick = hideSent;
 $("sent").addEventListener("click", e => { if (e.target.id === "sent") hideSent(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape") hideSent(); });
 
+// ----- Song search over the DJ's library -----
+const normS = x => (x || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+let lib = [], picked = null, mode = "search";
+
+function setMode(m){
+  mode = m;
+  $("searchStep").hidden = m !== "search";
+  $("pickStep").hidden = m !== "pick";
+  $("freeStep").hidden = m !== "free";
+  $("sendStep").hidden = m === "search";
+  if (m === "free") { $("backBtn").hidden = !lib.length; }
+  paint();
+}
+
+fetch("catalog.json", { cache: "no-cache" })
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(d => {
+    lib = d.tracks.map(([id, title, artist, bpm, camelot, energy, pop]) => {
+      const t = normS(title), a = normS(artist);
+      return { id, title, artist, bpm, camelot, pop, t, a, hay: " " + t + " " + a };
+    });
+    $("libInfo").textContent = `${lib.length.toLocaleString()} songs in ${DJ_NAME}'s library`;
+    search();
+  })
+  .catch(err => {
+    // No catalog? Fall back to typing the song in.
+    console.warn("catalog unavailable", err);
+    $("libInfo").textContent = "";
+    setMode("free");
+  });
+
+function search(){
+  const q = normS($("q").value);
+  let list;
+  if (!q) {
+    list = lib.slice(0, 15);                      // catalog is pre-sorted by popularity
+    $("resLabel").textContent = "🔥 Crowd favourites";
+    $("resCount").textContent = "";
+  } else {
+    const toks = q.split(" ");
+    const scored = [];
+    for (const s of lib) {
+      if (!toks.every(k => s.hay.includes(k))) continue;
+      let sc = s.pop / 10;
+      if (s.t.startsWith(q)) sc += 100;
+      else if (s.hay.includes(" " + q)) sc += 60;
+      if (s.t === q) sc += 50;
+      if (s.a.startsWith(toks[0])) sc += 15;
+      if ((" " + s.t).includes(" " + toks[0])) sc += 25;
+      scored.push([sc, s]);
+    }
+    scored.sort((x, y) => y[0] - x[0]);
+    list = scored.slice(0, 30).map(x => x[1]);
+    $("resLabel").textContent = list.length ? "Results" : "";
+    $("resCount").textContent = scored.length ? `${scored.length > 30 ? "30 of " : ""}${scored.length} match${scored.length === 1 ? "" : "es"}` : "";
+  }
+  const box = $("results"); box.replaceChildren();
+  if (q && !list.length) {
+    const d = document.createElement("p"); d.className = "loading";
+    d.textContent = "No match in the library — tap “Request it anyway” below.";
+    box.append(d);
+  }
+  for (const s of list) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "res"; b.setAttribute("role", "listitem");
+    const info = document.createElement("div");
+    const t = document.createElement("b"); t.textContent = s.title;
+    const a = document.createElement("span"); a.textContent = s.artist;
+    info.append(t, a);
+    const plus = document.createElement("i"); plus.textContent = "＋";
+    b.append(info, plus);
+    b.onclick = () => choose(s);
+    box.append(b);
+  }
+}
+let searchTimer;
+$("q").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(search, 60); });
+
+function choose(s){
+  picked = s;
+  $("pickTitle").textContent = s.title; $("pickArtist").textContent = s.artist;
+  setMode("pick");
+  $("btn").scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+$("changeBtn").onclick = () => { picked = null; setMode("search"); $("q").focus(); };
+$("anywayBtn").onclick = () => {
+  $("song").value = $("q").value.trim(); $("artist").value = "";
+  setMode("free"); $("song").focus();
+};
+$("backBtn").onclick = () => { setMode("search"); $("q").focus(); };
+$("q").addEventListener("keydown", e => { if (e.key === "Enter") e.preventDefault(); });   // Enter shouldn't submit from search
+
 // ----- Submit -----
+async function pushWithTimeout(data){
+  return Promise.race([
+    push(ref(db, "requests"), data),
+    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 10000))
+  ]);
+}
 $("f").addEventListener("submit", async e => {
   e.preventDefault();
-  const song = $("song").value.trim(), artist = $("artist").value.trim();
-  if (!song || sending || secondsLeft() > 0) return;
+  if (sending || secondsLeft() > 0 || mode === "search") return;
+  let song, artist, extra;
+  if (mode === "pick" && picked) {
+    song = picked.title; artist = picked.artist;
+    extra = { trackId: String(picked.id), bpm: picked.bpm || 0, camelot: picked.camelot || "" };
+  } else {
+    song = $("song").value.trim(); artist = $("artist").value.trim();
+    if (!song) { $("song").focus(); $("note").className = "note err"; $("note").textContent = "Type the song name first."; return; }
+    extra = { free: true };
+  }
+  const base = { song, artist, name: $("name").value.trim(), ts: serverTimestamp(), status: "new" };
   sending = true; paint();
   try {
-    // Firebase waits forever when offline, so give up after 10s and tell the guest
-    await Promise.race([
-      push(ref(db, "requests"), { song, artist, name: $("name").value.trim(), ts: serverTimestamp(), status: "new" }),
-      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 10000))
-    ]);
+    try { await pushWithTimeout({ ...base, ...extra }); }
+    catch (err) {
+      // Older database rules don't know the new fields yet: still deliver the request without them
+      if (/permission/i.test(String(err && (err.code || err.message)))) await pushWithTimeout(base);
+      else throw err;
+    }
     setLast();
-    $("song").value = ""; $("artist").value = "";
-    sending = false; paint();
+    sending = false;
+    $("q").value = ""; $("song").value = ""; $("artist").value = ""; picked = null;
+    setMode(lib.length ? "search" : "free"); search();
     showSent(song, artist);
   } catch (err) {
     console.error(err);

@@ -5,6 +5,8 @@ Guests scan a QR code → request a song → it pops up live on the DJ's screen.
 - `index.html` — guest request page (this is where the QR code points)
 - `dj.html` — live DJ screen (PIN protected)
 - `config.js` — the only file you edit
+- `catalog.json` — DJ Phil.B's song library for the search (auto-synced, don't edit)
+- `scripts/build_catalog.py` + `.github/workflows/sync-catalog.yml` — the sync
 - `database.rules.json` — security rules to paste into Firebase
 
 ---
@@ -62,3 +64,18 @@ Paste the guest page URL into any free QR generator. QR codes for a plain URL ne
 - The PIN is a light lock that keeps guests off the DJ screen. It isn't real security, because anyone who reads the page code could find it. The database rules stop people from deleting requests or editing what was asked.
 - The Firebase "API key" being visible in `config.js` is normal for Firebase web apps. The rules are what protect the data.
 - The free Firebase tier (Spark plan) handles thousands of requests a night.
+
+## Song search (DJ's library)
+
+Guests search DJ Phil.B's library (pulled from the `phillipbr/flamingo-dj` repo) and tap a song.
+If it isn't there, **"Can't find it? Request it anyway"** lets them type it; those show on the DJ
+screen with a ⚠ *not in library* chip. Library requests show **BPM** and **Camelot key**, and a
+**✓ mixes with …** chip when the key is compatible with the last song marked Played.
+
+**Keeping it up to date:** the *Sync song catalog* GitHub Action rebuilds `catalog.json` from
+`src/data/JSON/normalized/catalog/tracks-core.json` in his repo every 3 hours.
+For an instant refresh: repo → **Actions** → *Sync song catalog* → **Run workflow**.
+
+**Database rules:** library requests store `trackId`, `bpm` and `camelot`, and typed ones store
+`free`. Paste the latest `database.rules.json` into Firebase (Realtime Database → Rules → Publish).
+Until you do, requests still arrive, just without BPM/key.

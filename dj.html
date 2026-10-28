@@ -156,6 +156,15 @@
     #fx.run .fx-flash,#fx.run .fx-scan{animation:none}
   }
 
+  /* ===== Track chips: BPM, key, harmonic hint, not-in-library ===== */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .row .chips{margin-top:5px;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:3px 9px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(13px,1.3vw,17px);font-weight:700;color:#fff;background:rgba(0,0,0,.3)}
+  .row .chip{font-size:12px;padding:2px 7px}
+  .chip.key{color:var(--cyan);border-color:rgba(77,225,255,.45)}
+  .chip.mix{color:var(--ok);border-color:rgba(34,208,122,.55)}
+  .chip.free{color:var(--warn);border-color:rgba(255,176,32,.55)}
+
   /* ===== Peripheral alerts: screen-edge glow, NEW chip, NEW tags ===== */
   #edge{position:fixed;inset:0;z-index:45;pointer-events:none;opacity:0;
     box-shadow:inset 0 0 0 10px #ff3d7f,inset 0 0 90px 30px rgba(255,61,127,.7),inset 0 0 240px 80px rgba(124,92,255,.4)}
@@ -228,6 +237,7 @@
       <div class="label"><span class="newtag" id="heroNew" hidden>NEW</span><span id="heroLabel">Next up</span><span class="badge" id="heroBadge" hidden></span></div>
       <div class="h-song" id="hSong"></div>
       <div class="h-artist" id="hArtist"></div>
+      <div class="chips" id="hChips"></div>
       <div class="h-meta" id="hMeta"></div>
     </div>
     <div class="h-actions">
@@ -538,6 +548,7 @@ function start(){
   function setStatus(g, st){
     const prev = g.items.map(r => [r.id, r.status]);
     g.items.forEach(r => unread.delete(r.id));
+    if (st === "played") { const c = trackInfo(g).cam; if (c) lastPlayedCam = c; }
     stage.log(st === "played" ? `> deck_a.play("${g.first.song}") ✓` : st === "skipped" ? `> queue.skip("${g.first.song}")` : `> queue.restore("${g.first.song}")`, "cy");
     const u = {}; g.items.forEach(r => u[`requests/${r.id}/status`] = st);
     update(ref(db), u);
@@ -601,7 +612,8 @@ function start(){
       $("heroBadge").hidden = hero.items.length < 2;
       $("heroBadge").textContent = "×" + hero.items.length;
       $("hMeta").textContent = metaText(hero);
-      stage.setNow(hero.first.song + (hero.first.artist ? " — " + hero.first.artist : ""));
+      $("hChips").replaceWith(Object.assign(chipsFor(hero), { id: "hChips" }));
+      { const ti = trackInfo(hero); stage.setNow(hero.first.song + (hero.first.artist ? " — " + hero.first.artist : "") + (ti.bpm ? `  [${ti.bpm} BPM · ${ti.cam}]` : "")); }
       const heroUnread = hero.items.some(r => unread.has(r.id));
       $("hero").classList.toggle("unread", heroUnread);
       $("heroNew").hidden = !heroUnread;
@@ -624,6 +636,7 @@ function start(){
       if (isNew) songEl.append(el("span","newtag","NEW"));
       info.append(songEl);
       info.append(el("div","r-sub", [g.first.artist, metaText(g)].filter(Boolean).join(" · ")));
+      if (mode !== "done") { const c = chipsFor(g); if (c.childElementCount) info.append(c); }
       const act = el("div","r-actions");
       if (mode === "done") {
         const back = el("button","sm back","↩ Queue"); back.onclick = () => setStatus(g, "new"); act.append(back);
@@ -636,6 +649,29 @@ function start(){
       box.append(row);
     });
     fresh = new Set();
+  }
+
+  // Harmonic mixing on the Camelot wheel: same key, ±1 on the same letter, or same number other letter
+  let lastPlayedCam = "";
+  function camCompat(a, b){
+    const pa = /^(\d{1,2})([AB])$/.exec(a || ""), pb = /^(\d{1,2})([AB])$/.exec(b || "");
+    if (!pa || !pb) return false;
+    const na = +pa[1], nb = +pb[1], d = Math.abs(na - nb);
+    return (pa[2] === pb[2] && (d <= 1 || d === 11)) || (na === nb);
+  }
+  function trackInfo(g){
+    const withData = g.items.find(r => r.bpm || r.camelot);
+    return { bpm: withData ? withData.bpm : 0, cam: withData ? withData.camelot : "",
+             free: g.items.every(r => r.free === true) };
+  }
+  function chipsFor(g){
+    const { bpm, cam, free } = trackInfo(g);
+    const wrap = el("div", "chips");
+    if (bpm) wrap.append(el("span", "chip", bpm + " BPM"));
+    if (cam) wrap.append(el("span", "chip key", "🔑 " + cam));
+    if (cam && lastPlayedCam && camCompat(cam, lastPlayedCam)) wrap.append(el("span", "chip mix", "✓ mixes with " + lastPlayedCam));
+    if (free) wrap.append(el("span", "chip free", "⚠ not in library"));
+    return wrap;
   }
 
   function metaText(g){
